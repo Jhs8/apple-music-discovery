@@ -181,11 +181,14 @@ export class MusicKitAuthClient {
     try {
       await this.#beginConfigure();
     } catch (error) {
+      const mapped = this.#asAuthError(error);
       if (this.#supersede) {
         this.#status = "unauthorized";
         this.#settleSupersede({ status: "unauthorized" });
+      } else if (mapped.kind === "denied") {
+        this.#status = "unauthorized";
       }
-      throw this.#asAuthError(error);
+      throw mapped;
     }
     if (this.#supersede) {
       await this.#finishSupersede();

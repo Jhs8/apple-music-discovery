@@ -112,7 +112,7 @@ function requireRecord(input: unknown, path: string): Record<string, unknown> {
   if (typeof input !== "object" || input === null || Array.isArray(input)) {
     fail(path);
   }
-  return input;
+  return input as Record<string, unknown>;
 }
 
 function rejectUnknownKeys(

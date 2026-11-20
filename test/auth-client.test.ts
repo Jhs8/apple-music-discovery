@@ -56,6 +56,18 @@ class FakeSession implements MusicKitAuthSession {
   }
 }
 
+function constructorError(run: () => unknown): MusicKitAuthError {
+  try {
+    run();
+  } catch (error) {
+    if (error instanceof MusicKitAuthError) {
+      return error;
+    }
+    throw error;
+  }
+  throw new Error("expected MusicKitAuthError");
+}
+
 function clientFor(session: FakeSession, providerToken: () => string | Promise<string> = () => "test-developer-token") {
   return new MusicKitAuthClient({
     appName: "apple-music-discovery",
@@ -64,36 +76,32 @@ function clientFor(session: FakeSession, providerToken: () => string | Promise<s
   });
 }
 
-async function authError(
-  run: () => Promise<unknown>,
-): Promise<MusicKitAuthError> {
+async function authError(run: () => Promise<unknown>): Promise<MusicKitAuthError> {
   try {
     await run();
   } catch (error) {
-    assert.ok(error instanceof MusicKitAuthError);
-    return error;
+    if (error instanceof MusicKitAuthError) {
+      return error;
+    }
+    throw error;
   }
-  assert.fail("expected MusicKitAuthError");
+  throw new Error("expected MusicKitAuthError");
 }
 
 test("constructor rejects a blank app name or app build", () => {
   const session = new FakeSession();
-  assert.throws(
+  const missingName = constructorError(
     () =>
       new MusicKitAuthClient({
         appName: "  ",
         tokenProvider: { getDeveloperToken: () => "test-developer-token" },
         session,
       }),
-    (error: unknown) => {
-      assert.ok(error instanceof MusicKitAuthError);
-      assert.equal(error.kind, "error");
-      assert.equal(error.code, "MISSING_APP_NAME");
-      assert.equal(error.message, "App name is empty.");
-      return true;
-    },
   );
-  assert.throws(
+  assert.equal(missingName.kind, "error");
+  assert.equal(missingName.code, "MISSING_APP_NAME");
+  assert.equal(missingName.message, "App name is empty.");
+  const missingBuild = constructorError(
     () =>
       new MusicKitAuthClient({
         appName: "apple-music-discovery",
@@ -101,13 +109,9 @@ test("constructor rejects a blank app name or app build", () => {
         tokenProvider: { getDeveloperToken: () => "test-developer-token" },
         session,
       }),
-    (error: unknown) => {
-      assert.ok(error instanceof MusicKitAuthError);
-      assert.equal(error.code, "MISSING_APP_BUILD");
-      assert.equal(error.message, "App build is empty.");
-      return true;
-    },
   );
+  assert.equal(missingBuild.code, "MISSING_APP_BUILD");
+  assert.equal(missingBuild.message, "App build is empty.");
   assert.equal(session.configureCount, 0);
 });
 
@@ -330,6 +334,33 @@ test("a second unauthorize shares the in-flight sign-out", async () => {
   await first;
   await second;
   assert.equal(session.unauthorizeCount, 1);
+  assert.equal(client.getStatus(), "unauthorized");
+});
+
+test("configure failure during supersede does not revoke through the session", async () => {
+  const session = new FakeSession();
+  const gate = deferred<void>();
+  let entered!: () => void;
+  const started = new Promise<void>((resolve) => {
+    entered = resolve;
+  });
+  session.configureResult = () => {
+    entered();
+    return gate.promise.then(() => {
+      throw new Error("configure failed");
+    });
+  };
+  const client = clientFor(session);
+  const signingIn = client.authorize();
+  await started;
+  const signingOut = client.unauthorize();
+  gate.resolve();
+  const error = await authError(() => signingIn);
+  assert.equal(error.code, "UNKNOWN_ERROR");
+  assert.equal(error.message, "MusicKit authorization failed.");
+  assert.deepEqual(await signingOut, { status: "unauthorized" });
+  assert.equal(session.authorizeCount, 0);
+  assert.equal(session.unauthorizeCount, 0);
   assert.equal(client.getStatus(), "unauthorized");
 });
 

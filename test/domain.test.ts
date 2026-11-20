@@ -9,14 +9,19 @@ import {
 } from "../src/domain/types.ts";
 
 function rejectsPath(run: () => unknown, path: string): void {
-  assert.throws(run, (error: unknown) => {
-    assert.ok(error instanceof DomainError);
+  try {
+    run();
+  } catch (error) {
+    if (!(error instanceof DomainError)) {
+      throw error;
+    }
     assert.equal(error.name, "DomainError");
     assert.equal(error.code, "INVALID_DOMAIN_VALUE");
     assert.equal(error.path, path);
     assert.equal(error.message, `Invalid ${path}.`);
-    return true;
-  });
+    return;
+  }
+  throw new Error(`expected DomainError at ${path}`);
 }
 
 test("parseSong trims required strings and keeps an optional album title", () => {
