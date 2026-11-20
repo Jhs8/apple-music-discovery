@@ -1,6 +1,6 @@
 # MusicKit authorization wrapper implementation plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Ship a TypeScript MusicKit configure/authorize/unauthorize wrapper, closed-key domain parsers, and Node tests that mock the SDK.
 
@@ -32,16 +32,16 @@
 - Consumes: none
 - Produces: `npm test` and `npm run typecheck` entry points
 
-- [ ] **Step 1: Add the package files**
+- [x] **Step 1: Add the package files**
 
 `package.json` names the package, sets `"type": "module"`, and declares the two scripts above. `.gitignore` contains `node_modules/`.
 
-- [ ] **Step 2: Install and record the lockfile**
+- [x] **Step 2: Install and record the lockfile**
 
 Run: `npm install`
 Expected: `package-lock.json` created, `typescript` under `devDependencies`.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add package.json package-lock.json tsconfig.json .gitignore docs/superpowers/plans/2026-11-20-musickit-auth.md
@@ -58,7 +58,7 @@ git commit -m "Add the TypeScript test scaffold and implementation plan."
 - Consumes: none
 - Produces: `Song`, `Recommendation`, `Feedback`, `FeedbackRating`, `DomainError`, `parseSong`, `parseRecommendation`, `parseFeedback`, `createFeedback`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Cover, with `node:assert/strict` and `node:test`:
 
@@ -80,21 +80,21 @@ Cover, with `node:assert/strict` and `node:test`:
 - `createFeedback({ songId: " 9 ", rating: "up", now: new Date("2026-11-19T00:00:00.000Z") })` returns the trimmed id and that exact `createdAt`.
 - `createFeedback` with `new Date(Number.NaN)` throws path `now`.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `node --test test/domain.test.ts`
 Expected: FAIL because `src/domain/types.ts` does not exist.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 `DomainError` sets `name`, `code`, and `path`. Parsers accept only their listed keys. Strings are trimmed and rejected when empty. `createFeedback` rejects an invalid `Date` at path `now`, then returns `parseFeedback`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `node --test test/domain.test.ts`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/domain/types.ts test/domain.test.ts
@@ -121,25 +121,25 @@ Status rules match the spec table. `getPending()` prefers `authorize`, then `una
 
 SDK errors: prefer string `errorCode`, else string `reason`, when the value matches `/^[A-Z0-9_]+$/`. Message prefers `description`, then `message`. `AUTHORIZATION_ERROR` is `denied` with message `MusicKit authorization was not granted.` Any other SDK code is `error`. A message containing the developer token or the string just returned by `authorize()` is replaced by the code. Non-SDK throws become `UNKNOWN_ERROR` / `MusicKit authorization failed.`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Use a controllable fake session (`configure`, `authorize`, `unauthorize`, `isAuthorized`, plus call counts and deferred authorize). Assert every auth case in the spec's Tests section, plus constructor rejection for a blank `appName` and a blank `appBuild`, and one overlapping `configure()` pair that calls the provider once.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `node --test test/auth-client.test.ts`
 Expected: FAIL because the client module does not exist.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Implement the private-field client and the error class described above. The exclusive queue is reentrant so `authorize()` can call `configure()` without deadlocking.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `node --test test/auth-client.test.ts test/domain.test.ts`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/musickit/errors.ts src/musickit/auth-client.ts test/auth-client.test.ts
@@ -162,25 +162,25 @@ Load order: throw `NOT_IN_BROWSER` when no document is available; skip injection
 
 Call `MusicKit.configure` with `{ developerToken, app: { name, build? } }`. `build` is omitted when absent. Keep the returned instance when it exposes `authorize`, `unauthorize`, and a boolean `isAuthorized`; otherwise use `getInstance()`. A second configure with the same token and app identity returns that instance. A different identity throws `TOKEN_ALREADY_CONFIGURED` and does not call `MusicKit.configure` again. `authorize`, `unauthorize`, and `isAuthorized` before configure throw `NOT_CONFIGURED`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Fake `document` and `window` in the test file. Assert the browser cases in the spec, including no second script tag, no injection when `MusicKit.configure` already exists, build present and omitted, `TOKEN_ALREADY_CONFIGURED`, `timeoutMs: 20`, a script `error` event, and `NOT_IN_BROWSER` with no document.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `node --test test/browser-loader.test.ts`
 Expected: FAIL because the loader module does not exist.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Implement the loader. Do not read `musicUserToken` or set `persist`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `npm test`
 Expected: PASS for domain, auth client, and browser loader.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/musickit/browser-loader.ts test/browser-loader.test.ts
@@ -197,11 +197,11 @@ git commit -m "Add the MusicKit browser session loader."
 - Consumes: every public export from Tasks 2–4
 - Produces: the package entry and a workflow that runs `npm ci`, `npm run typecheck`, and `npm test` on Node 22
 
-- [ ] **Step 1: Re-export the public API**
+- [x] **Step 1: Re-export the public API**
 
 `src/index.ts` re-exports the domain parsers and types, the auth client and error types, and the browser loader constants and factory. Importing it must not touch `document`.
 
-- [ ] **Step 2: Update the README**
+- [x] **Step 2: Update the README**
 
 Keep the existing first sentence. Append: `The first code milestone is a MusicKit authorization wrapper (see docs/superpowers/specs/2026-11-20-musickit-auth-design.md) and its tests do not sign in to Apple Music.`
 
@@ -210,7 +210,7 @@ Then document the exported functions, a runtime token-provider example that does
 - Mock validation: `npm test` drives a fake session and a fake DOM.
 - Live Apple integration: not exercised here. A green test does not mean Apple accepted a developer token or a person finished the popup. On a real page the SDK may store the Music User Token in `localStorage` under its own key.
 
-- [ ] **Step 3: Add CI and verify from a clean install**
+- [x] **Step 3: Add CI and verify from a clean install**
 
 Workflow triggers on push and pull_request. Then run:
 
@@ -223,7 +223,7 @@ npm test
 
 Expected: typecheck exits 0 and every test passes.
 
-- [ ] **Step 4: Commit and push**
+- [x] **Step 4: Commit and push**
 
 ```bash
 git add src/index.ts README.md .github/workflows/test.yml
